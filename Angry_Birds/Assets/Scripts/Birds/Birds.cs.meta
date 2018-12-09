@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 70ef1d8d57c885f44a3dfb9e9845c3d5
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - destorySound: {fileID: 8300000, guid: 125420a2059a6744ea8999ba553d67cd, type: 3}
+  - selectSound: {instanceID: 0}
+  - flyingSound: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
