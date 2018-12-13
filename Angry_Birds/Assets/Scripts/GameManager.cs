@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour {
         TitleScreen,LevelSelect,LevelPlaying
     }
     public TypeOfScene typeOfScene;
+    public static int typeOfSceneNum;       //场景类型对应数字，关卡内为1，其他为0
     public enum GameState   //关卡状态
     {
         Start,Playing,End
@@ -22,7 +23,7 @@ public class GameManager : MonoBehaviour {
     public GameObject GreyPanel;    //灰色画板（暂停时外部的灰色遮罩）
     public GameObject PauseMenu;    //暂停菜单
     public GameObject ExitWindow;   //游戏退出窗口
-    public GameObject ResultWindow; //关卡结算窗口
+    public GameObject[] ResultWindow; //关卡结算窗口，0为赢，1为输
 
     public Transform middleAnchor;  //弹弓中间点
     public static Vector3 midAnchorPos; //弹弓中间点位置（存储用）
@@ -30,87 +31,84 @@ public class GameManager : MonoBehaviour {
     public Transform birdsParent;   //所有鸟的公共父物体
     public Transform piggiesParent; //所有猪的公共父物体（坐标决定相机初始位置）
     public GameObject sky;          //天空
+    public GameObject[] birdScoreUI;    //各种鸟的10000分物体
 
     AudioSource audioSource;
-    public AudioClip[] music;           //BGM
     public AudioClip[] levelPlaying;    //与关卡状态有关的音效
-    
+
     [Header("Cursor Settings")]         //标题属性（在编辑器中查看）
     public Texture2D[] cursorTexture;   //鼠标指针材质
     public CursorMode cursorMode;       //鼠标指针模式
     public Vector2 hotSpot;             //鼠标指针“热点”
     float mousepos, lastmousepos;       //这一帧与上一帧的鼠标指针位置
 
+    public static int score, lastHighScore, levelStar;      //积分，过去最高分,鸟的出场顺位
+    public static int birdNum, birdTotalNum, pigTotalNum;   //鸟（空闲状态）和猪的当前个数，关卡星数
+    int scoreInText = 0, highScoreInText;      //当前积分文本，最高分文本
+    public static GameObject lastBird, thisBird, upperBlue, lowerBlue; //上一只鸟，当前被操作的鸟，蓝鸟的两个分身
+    public static int finalBirdNum; //游戏结束时鸟的数量
 
-
-    public static int score, birdNum, birdTotalNum, pigTotalNum;  //积分，鸟的出场顺位，鸟（空闲状态）和猪的当前个数
-    public static GameObject lastBird, thisBird; //上一只鸟，当前被操作的鸟
-
-    float scoreInText = 0, nextChange, changeRate = 0.1f;   //UI积分，积分改变时间参数
+    float nextChange, changeRate = 0.1f;   //积分改变时间参数
     public static float camNextChange, camChangeRate = 0.8f;    //相机移动时间参数
-    bool oncePerformed = false; //是否执行操作参数
+    bool oncePerformed = false, endOncePerformed = false;   //是否已执行操作
+    bool canDisplayResultUI = false, canDoFinalScorePlus = false; //能否显示结算界面,能否在胜利时进行最终加分
 
-    public Text scoreText;      //当前积分
-    public Text highScoreText;  //最高分
+    public Text scoreText;      //当前积分文本
+    public Text highScoreText;  //最高分文本
     public Text levelNameText;  //暂停窗口中的关卡名字
+    string levelName;           //关卡名字
 
-    void Start()
+    void OnEnable()
     {
         audioSource = GetComponent<AudioSource>();
         Time.timeScale = 1;
 
-        if (typeOfScene==TypeOfScene.LevelPlaying)      //场景状态为关卡时
+        if (typeOfScene == TypeOfScene.LevelPlaying)      //场景状态为关卡时
         {
-            score = 0;
+            typeOfSceneNum = 1;         //传入BGMManager类供切换BGM用
             Scene scene = SceneManager.GetActiveScene();
-            levelNameText.text = scene.name.PadLeft(5).Remove(0, 5);//显示关卡名字
+            levelName = scene.name.PadLeft(5).Remove(0, 5);     //定义关卡名字
+            levelNameText.text = levelName;                     //更改暂停菜单中的关卡名字
+
+            score = 0; levelStar = 1;
+            lastHighScore = PlayerPrefs.GetInt(levelName + "Highscore", 0);
+            highScoreInText = PlayerPrefs.GetInt(levelName + "Highscore", 0);
+            highScoreText.text = "Highscore: " + highScoreInText; //初始化当前分，最高分，最高分文本
 
             canDefineResult = true;
             gameState = GameState.Start;
-            camOncePerformed = true;                    //各种初始化
+            Birds.state = Birds.BirdState.Idle;
+            camOncePerformed = true;
+            canDoFinalScorePlus = false;        //各种初始化
             gameCamera.transform.position = new Vector3(piggiesParent.position.x, 0, -10);      //使相机对准敌方区域中心位置（预先设定）
             midAnchorPos = middleAnchor.position;       //储存弹弓中间点的坐标
 
             birdNum = 1;
-            lastBird = null;
-            thisBird = null;                            //各种初始化
-            birdTotalNum = birdsParent.childCount;      
+            lastBird = null;thisBird = null;upperBlue = null;lowerBlue = null;                  //各种初始化
+            birdTotalNum = birdsParent.childCount;
             pigTotalNum = piggiesParent.childCount;     //初始化鸟与猪的个数
-            
-            audioSource.clip = music[1];
-            audioSource.Play();                         //切换音乐
+
             int levelStartrand = Random.Range(0, 2);
             if (levelStartrand == 2) levelStartrand = 0;
             audioSource.PlayOneShot(levelPlaying[levelStartrand]);      //随机播放关卡开始音效
 
             cursorInLevel = true;
-            cursorDrag = true;                          
+            cursorDrag = true;
             Cursor.SetCursor(cursorTexture[0], hotSpot, cursorMode);    //初始化鼠标状态
             mousepos = Input.mousePosition.x;           //记录开始时鼠标位置
         }
         else
         {
-            audioSource.clip = music[0];
-            audioSource.Play();                         //切换音乐
-
+            typeOfSceneNum = 0;         //传入BGMManager类供切换BGM用
             Cursor.SetCursor(cursorTexture[0], hotSpot, cursorMode);    //初始化鼠标状态
-
-            if (typeOfScene == TypeOfScene.TitleScreen)
-            {
-                
-            }
-            else
-            {
-
-            }
-        }  
+        }
     }
     
     void Update()
     {
         if (typeOfScene == TypeOfScene.LevelPlaying)    //场景类型为关卡时
         {
-            if (gameState == GameState.Start)
+            if (gameState == GameState.Start || gameState == GameState.End)
             {
                 Invoke("CameraAutoManagement", 0.75f);
             }
@@ -129,7 +127,7 @@ public class GameManager : MonoBehaviour {
             {
                 CameraManualManagement();
             }
-            if (canDefineResult && gameState != GameState.End && Birds.state!=Birds.BirdState.Shot)     //能判断关卡结果的条件
+            if (canDefineResult && gameState != GameState.Start && Birds.state!=Birds.BirdState.Shot)     //能判断关卡结果的条件
             {
                 LevelResult();
             }
@@ -163,7 +161,7 @@ public class GameManager : MonoBehaviour {
             sky.transform.localScale += new Vector3(1, 1, 0) * speedSign * Time.unscaledDeltaTime * 10 / 7f;
         }
 
-        if(Input.GetMouseButton(0) && lastmousepos - mousepos != 0 && Birds.state != Birds.BirdState.Grabbed && Birds.state != Birds.BirdState.Shot)        //能拖动鼠标移动视角的条件
+        if (Input.GetMouseButton(0) && lastmousepos - mousepos != 0 && Birds.state != Birds.BirdState.Grabbed && Birds.state != Birds.BirdState.Shot && lastmousepos != -10000)        //能拖动鼠标移动视角的条件
         {
             gameCamera.GetComponent<Rigidbody2D>().velocity = new Vector2(lastmousepos - mousepos, 0);      //给予相机速度
         }
@@ -173,7 +171,7 @@ public class GameManager : MonoBehaviour {
     {
         if (gameState == GameState.Start)       //关卡状态为开始时，延时0.75秒被调用
         {
-            gameCamera.transform.Translate(Vector3.left * Time.unscaledDeltaTime * 8f);     //移动相机
+            gameCamera.transform.Translate(Vector2.left * Time.unscaledDeltaTime * 8f);     //移动相机
             if (gameCamera.transform.position.x <= sling.position.x)gameState = GameState.Playing;  //移动到合适坐标后改变关卡状态为进行中
         }
         else if (gameState == GameState.Playing)    //关卡状态为进行中
@@ -198,20 +196,38 @@ public class GameManager : MonoBehaviour {
             }
             else    //鸟的其他状态
             {
-                if (!camOncePerformed && Time.time >= camNextChange)    //未执行操作且时间条件满足时（条件设定在Birds类中）
+                if (!camOncePerformed && Time.time >= camNextChange && birdTotalNum > 0)    //未执行操作且时间条件满足时（条件设定在Birds类中）
                 {
-                    gameCamera.transform.Translate(Vector3.left * Time.unscaledDeltaTime * 8f); //移动相机
                     if (gameCamera.transform.position.x <= sling.position.x) camOncePerformed = true;   //移动到合适坐标后确认相机已执行操作
+                    gameCamera.GetComponent<Rigidbody2D>().velocity = Vector2.left * 8;         //移动相机
                 }
             }
         }
         else        //关卡状态为结束时
         {
-            if (!camOncePerformed)      //未执行操作时（条件设定在Birds类中）
+            if (!endOncePerformed)      //未执行操作时（条件设定在Birds类中）
             {
-                gameCamera.transform.Translate(Vector3.left * Time.unscaledDeltaTime * 20f);    //移动相机
-                if (gameCamera.transform.position.x <= sling.position.x) camOncePerformed = true;   //移动到合适坐标后确认相机已执行操作
+                birdNum = 0;
+                changeRate = 0.7f;
+                if (gameCamera.transform.position.x <= sling.position.x && !canDisplayResultUI) endOncePerformed = true;  
+                gameCamera.GetComponent<Rigidbody2D>().velocity = Vector2.left * 15;        //移动相机
+                //移动到合适坐标后确认相机已执行操作
             }
+            else if (endOncePerformed && !canDisplayResultUI)
+            {
+                if (pigTotalNum <= 0)   //胜利判断（优先级大）
+                {
+                    if (canDoFinalScorePlus)        //能够执行加分函数时
+                    {
+                        finalBirdNum = birdsParent.childCount;  //尚存活的鸟的数量(但包括抛射出未完全摧毁的，会在加分函数中排除)
+                        FinalScorePlus();
+                    }
+                }
+                else if (birdTotalNum <= 0)     //失败判断（优先级小）
+                {
+                    canDisplayResultUI = true;
+                }
+            } 
         }
     }
 
@@ -260,22 +276,82 @@ public class GameManager : MonoBehaviour {
                 {
                     scoreInText += Random.Range(200, 1000); //每帧不均匀增加UI中积分以达到UI积分自然渐变目的
                     scoreInText -= scoreInText % 10;        //设定积分必须为10的倍数
-                    if (scoreInText <= score) scoreText.text = "Score: " + (int)scoreInText;    //UI中积分小于实际积分时将UI设为UI积分
+                    if (scoreInText <= score)
+                    {
+                        scoreText.text = "Score: " + scoreInText;    //UI中积分小于实际积分时将UI设为UI积分
+                        SetHighScore();     //设定最高分函数
+                    }
                     oncePerformed = false;
                 }
             }
             else if (scoreInText > score)   //UI中积分大于实际积分时
             {
                 scoreInText = score;        //UI积分与实际积分同步
-                scoreText.text = "Score: " + (int)scoreInText;
+                scoreText.text = "Score: " + scoreInText;
+                SetHighScore();     //设定最高分函数
             }
         }
-        else scoreText.text = "Score: " + score;    //游戏状态为结束时不进行渐变，直接将UI设为实际积分
+        else
+        {
+            scoreInText = score;
+            scoreText.text = "Score: " + scoreInText;    //游戏状态为结束时不进行渐变，直接将UI设为实际积分
+            SetHighScore();     //设定最高分函数
+        }
     }
 
-    void HighScoreManagement()
+    void SetHighScore()
     {
-        
+        if (scoreInText >= highScoreInText) //打破纪录时改变最高分文本
+        {
+            highScoreInText = scoreInText; 
+            highScoreText.text = "Highscore: " + scoreInText;
+        }
+    }
+
+    void FinalScorePlus()
+    {
+        if (!oncePerformed)
+        {
+            nextChange = Time.time + changeRate;    //延时，每只鸟加分间隔0.7秒
+            oncePerformed = true;
+            
+        }
+        else if (oncePerformed && Time.time >= nextChange)
+        {
+            oncePerformed = false;
+            GameObject currentBirdInFinal = birdsParent.GetChild(birdNum).gameObject;   //设定将生成10000分物体的鸟
+
+            for(; ; )
+            {
+                if (!currentBirdInFinal.activeInHierarchy || currentBirdInFinal.GetComponent<LineRenderer>() == null) //排除已经抛射出的鸟
+                {
+                    birdNum++;
+                    currentBirdInFinal = birdsParent.GetChild(birdNum).gameObject;       //重新设定
+                }
+                else break;
+            }
+
+            Animator animator= currentBirdInFinal.transform.GetChild(0).gameObject.GetComponent<Animator>();
+            animator.SetTrigger("Cry");         //设定动画
+
+            score += 10000;
+
+            //决定10000分物体种类并生成，延时摧毁
+            int scoreUINum=0;
+            if (currentBirdInFinal.tag == "Bird_Red") scoreUINum = 0;
+            else if (currentBirdInFinal.tag == "Bird_Yellow") scoreUINum = 2;
+            else scoreUINum = 1;
+            GameObject scoreUI10000 = Instantiate(birdScoreUI[scoreUINum], currentBirdInFinal.transform.position + Vector3.up * 0.75f, Quaternion.identity);
+            Destroy(scoreUI10000, 0.8f);
+
+            if (birdNum >= finalBirdNum - 1)    //所有鸟加完分时延时显示结果窗口
+            {
+                nextChange = Time.time + 1.8f;
+                canDoFinalScorePlus = false;
+                canDisplayResultUI = true;
+            }
+            else birdNum++;         //否则轮到下一只鸟
+        }
     }
 
     void LevelResult()  //关卡结果判断
@@ -283,29 +359,89 @@ public class GameManager : MonoBehaviour {
         if (pigTotalNum <= 0)   //胜利判断（优先级大）
         {
             gameState = GameState.End;  //改变游戏状态
-            Debug.Log("You Win!");
-            
+            if (!canDoFinalScorePlus && !canDisplayResultUI && Time.timeScale != 0)
+            {
+                int winSoundRand = Random.Range(2, 4);
+                if (winSoundRand == 4) winSoundRand = 2;
+                audioSource.PlayOneShot(levelPlaying[winSoundRand]);
+                canDoFinalScorePlus = true;     //可以执行结束加分函数
+            }
+            if (canDisplayResultUI && Time.time > nextChange)
+            {
+                setStar();      //判断星数
+                if (score > lastHighScore)  //若打破纪录
+                {
+                    PlayerPrefs.SetInt(levelName + "Highscore", score);     //写入最高分
+                    PlayerPrefs.SetInt(levelName + "Star", levelStar);      //写入对应星数
+                }
+
+                audioSource.PlayOneShot(levelPlaying[6]);
+                GreyPanel.SetActive(true);
+                ResultWindow[0].SetActive(true);        //播放声音同时启用窗口
+                canDisplayResultUI = false;
+                PlayerPrefs.Save();             //存档
+                Time.timeScale = 0;
+            }
         }
         else if (birdTotalNum <= 0)     //失败判断（优先级小）
         {
             gameState = GameState.End;  //改变游戏状态
-            Debug.Log("You Lose!");
-            
+            if (!canDoFinalScorePlus)       //此处仅起控制作用
+            {
+                nextChange = Time.time + 3f;
+                canDoFinalScorePlus = true;
+                canDisplayResultUI = true;
+            }
+            if (canDisplayResultUI && Time.time >= nextChange)
+            {
+                int failSoundRand = Random.Range(4, 6);
+                if (failSoundRand == 6) failSoundRand = 4;
+                audioSource.PlayOneShot(levelPlaying[failSoundRand]);
+                GreyPanel.SetActive(true);
+                ResultWindow[1].SetActive(true);
+                canDisplayResultUI = false;
+                Time.timeScale = 0;
+            }
         }
+    }
+
+    void setStar()      //决定星数
+    {
+        int twoStarsScore=0, threeStarsScore=0;
+        switch (levelName)
+        {
+            case ("1-1"):{twoStarsScore = 25000; threeStarsScore = 28000; break;}
+            case ("1-2"):{twoStarsScore = 25000; threeStarsScore = 40000; break;}
+            case ("1-3"):{twoStarsScore = 30000; threeStarsScore = 37500; break;}
+            case ("1-4"):{twoStarsScore = 40000; threeStarsScore = 47000; break;}
+            case ("1-5"):{twoStarsScore = 40000; threeStarsScore = 47000; break;}
+        }
+        if (score > threeStarsScore) levelStar = 3;
+        else if (score > twoStarsScore) levelStar = 2;
+        else levelStar = 1;
+    }
+
+    private void OnApplicationFocus(bool focus)         //关卡中失去焦点时暂停游戏
+    {
+        if (!focus && typeOfSceneNum == 1) LevelPause();
+    }
+
+    private void OnApplicationQuit()
+    {
+        PlayerPrefs.Save();
     }
 
     public void LevelPause()    //暂停（点击暂停按钮后执行）
     {
-        //PauseMenu.GetComponent<RectTransform>().Translate(Vector3.right * 200);
         cursorInLevel = false;      //改变鼠标状态
         GreyPanel.SetActive(true);  //改变灰色画板（窗口）状态
         PauseMenu.SetActive(true);  //改变暂停界面状态
+        lastmousepos = -10000;  //防止相机调整出现BUG
 
         Time.timeScale = 0; //使游戏暂停
     }
     public void LevelContinue() //取消暂停（点击继续按钮后执行）
     {
-        //PauseMenu.GetComponent<RectTransform>().Translate(Vector3.left * 200);
         cursorInLevel = true;        //改变鼠标状态
         GreyPanel.SetActive(false);  //改变灰色画板（窗口）状态
         PauseMenu.SetActive(false);  //改变暂停界面状态
@@ -327,7 +463,7 @@ public class GameManager : MonoBehaviour {
         Application.Quit();
         Debug.Log("Game Quitted.");
     }
-    
+
     public static Vector3 GetWorldMousePos()    //获取鼠标--世界坐标
     {
         return Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
@@ -335,5 +471,12 @@ public class GameManager : MonoBehaviour {
     public static Vector3 GetViewPos(Vector3 viewPos)   //获取相机视觉(0-1)--世界坐标
     {
         return Camera.main.ViewportToWorldPoint(viewPos);
+    }
+
+    [ContextMenu("该关卡最高分清零")]
+    void SetHighScoreToZero()
+    {
+        PlayerPrefs.DeleteKey(levelName + "Highscore");
+        PlayerPrefs.DeleteKey(levelName + "Star");
     }
 }

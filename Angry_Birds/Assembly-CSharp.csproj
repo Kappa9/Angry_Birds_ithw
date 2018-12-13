@@ -61,18 +61,23 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Birds\Bird_red.cs" />
-    <Compile Include="Assets\Scripts\Birds\Bird_Yellow.cs" />
-    <Compile Include="Assets\Scripts\Birds\BirdAnimate.cs" />
-    <Compile Include="Assets\Scripts\Birds\Birds.cs" />
+    <Compile Include="Assets\Scripts\BGMManager.cs" />
+    <Compile Include="Assets\Scripts\Bird\Bird_Blue.cs" />
+    <Compile Include="Assets\Scripts\Bird\Bird_red.cs" />
+    <Compile Include="Assets\Scripts\Bird\Bird_Yellow.cs" />
+    <Compile Include="Assets\Scripts\Bird\BirdAnimate.cs" />
+    <Compile Include="Assets\Scripts\Bird\Birds.cs" />
     <Compile Include="Assets\Scripts\Blocks.cs" />
-    <Compile Include="Assets\Scripts\Buttons.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
-    <Compile Include="Assets\Scripts\LevelButtons.cs" />
     <Compile Include="Assets\Scripts\LevelEdge.cs" />
     <Compile Include="Assets\Scripts\Piggies.cs" />
-    <Compile Include="Assets\Scripts\String\SlingHolder.cs" />
-    <Compile Include="Assets\Scripts\String\SlingString.cs" />
+    <Compile Include="Assets\Scripts\Sling\SlingHolder.cs" />
+    <Compile Include="Assets\Scripts\Sling\SlingString.cs" />
+    <Compile Include="Assets\Scripts\Story.cs" />
+    <Compile Include="Assets\Scripts\TitleScreen.cs" />
+    <Compile Include="Assets\Scripts\UI\Buttons.cs" />
+    <Compile Include="Assets\Scripts\UI\LevelButtons.cs" />
+    <Compile Include="Assets\Scripts\UI\ResultWindow.cs" />
     <Reference Include="UnityEditor.StandardEvents">
       <HintPath>C:/Users/河童⑨/Desktop/Unity test/Angry_Birds/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
     </Reference>

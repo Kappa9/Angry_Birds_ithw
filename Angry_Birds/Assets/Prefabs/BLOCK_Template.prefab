@@ -173,7 +173,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blockType: 1
   maxhp: 75
-  scorePlusText: {fileID: 0}
+  scorePlusText: {fileID: 114806460866271390, guid: bcfbd2f49443af44f82ccb6cd03c7d07,
+    type: 2}
   canvas: {fileID: 1259496298374222, guid: 61031b01689c6d64f841af1bceba1fb4, type: 2}
   BlockStates:
   - {fileID: 21300000, guid: 08e5822e733b1494ca88dff133a5ce21, type: 3}

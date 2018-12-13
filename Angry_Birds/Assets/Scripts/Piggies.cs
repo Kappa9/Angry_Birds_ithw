@@ -1,12 +1,10 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Piggies : MonoBehaviour {
 
     public float maxhp; //最大hp
     float hp, dmg = 0;  //当前hp，每次伤害的伤害值
-    float dmgRate = 2.5f;   //伤害倍率
+    float dmgRate = 3f;   //伤害倍率
 
     private Animator animator;
     private AudioSource audioSource;
@@ -42,7 +40,7 @@ public class Piggies : MonoBehaviour {
     {
         //定义相对速率与伤害计算
         float speed = collision.relativeVelocity.magnitude;
-        if (speed > 1.5f) dmg = (speed - 1.5f) * dmgRate * 6f;
+        if (speed > 1.5f) dmg = (speed - 1.5f) * dmgRate * 8f;
         else dmg = 0;
         hp -= dmg;
         if (hp <= 0)

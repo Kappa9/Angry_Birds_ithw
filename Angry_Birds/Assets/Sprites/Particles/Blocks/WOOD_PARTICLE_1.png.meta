@@ -112,7 +112,7 @@ TextureImporter:
     indices: 
     edges: []
     weights: []
-  spritePackingTag: WoodParticle
+  spritePackingTag: Particle
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0
   userData: 

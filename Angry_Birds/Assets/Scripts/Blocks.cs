@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -41,31 +39,31 @@ public class Blocks : MonoBehaviour {
         {
             case BlockType.Wood:
                 {
-                    GetComponent<Rigidbody2D>().mass = 3;                               //设定质量
+                    GetComponent<Rigidbody2D>().mass = 6;                               //设定质量
                     pr.textureSheetAnimation.SetSprite(0, BreakParticles[0]);
                     pr.textureSheetAnimation.SetSprite(1, BreakParticles[1]);
                     pr.textureSheetAnimation.SetSprite(2, BreakParticles[2]);
                     pr.textureSheetAnimation.SetSprite(3, null);
                     pr.textureSheetAnimation.SetSprite(4, null);                        //设定粒子
-                    dmgRateOfRed = 2f; dmgRateOfYellow = 2.5f; dmgRateOfGreen = 2f;     //设定各项伤害倍率
+                    dmgRateOfRed = 2.5f; dmgRateOfYellow = 3f; dmgRateOfGreen = 2.5f;     //设定各项伤害倍率
                     soundRand1 = 0; soundRand2 = 3; soundRand3 = 6; soundRand4 = 12;    //限定随机数范围
                     break;
                 }
             case BlockType.Galss:
                 {
-                    GetComponent<Rigidbody2D>().mass = 2;                               //同上
+                    GetComponent<Rigidbody2D>().mass = 4;                               //同上
                     pr.textureSheetAnimation.SetSprite(0, BreakParticles[3]);
                     pr.textureSheetAnimation.SetSprite(1, BreakParticles[4]);
                     pr.textureSheetAnimation.SetSprite(2, BreakParticles[5]);
                     pr.textureSheetAnimation.SetSprite(3, BreakParticles[6]);
                     pr.textureSheetAnimation.SetSprite(4, BreakParticles[7]);
-                    dmgRateOfBlue = 1.5f;
+                    dmgRateOfBlue = 3f;
                     soundRand1 = 12; soundRand2 = 15; soundRand3 = 18; soundRand4 = 26;
                     break;
                 }
             case BlockType.Stone:
                 {
-                    GetComponent<Rigidbody2D>().mass = 5;                               //同上
+                    GetComponent<Rigidbody2D>().mass = 12;                               //同上
                     pr.textureSheetAnimation.SetSprite(0, BreakParticles[8]);
                     pr.textureSheetAnimation.SetSprite(1, BreakParticles[9]);
                     pr.textureSheetAnimation.SetSprite(2, BreakParticles[10]);
@@ -92,7 +90,7 @@ public class Blocks : MonoBehaviour {
         else if (collision.gameObject.tag == "Bird_Green") dmgRate = dmgRateOfGreen;
         else dmgRate = dmgRateOfOthers;     //根据被谁撞击决定伤害倍率
         float speed = collision.relativeVelocity.magnitude;     //相对速率
-        if (speed > 4f) dmg = (speed - 4f) * dmgRate * 6f;         //伤害计算
+        if (speed > 3f) dmg = (speed - 3f) * dmgRate * 8f;         //伤害计算
         else dmg = 0;
         hp -= dmg;      //减血
         //Debug.Log(speed);
@@ -147,15 +145,6 @@ public class Blocks : MonoBehaviour {
     void ScorePlus(int plusScore)   //加分函数
     {
         GameManager.score += plusScore;
-        //Vector3[] worldCs = new Vector3[4];
-        //Vector3[] localCs = new Vector3[4];
-        //canvas.GetComponent<RectTransform>().GetWorldCorners(worldCs);
-        //float zoom = (localCs[1] - localCs[0]).y / (worldCs[1] - worldCs[0]).y;
-        //Debug.Log(zoom);
-        //Debug.Log(worldCs[0]);
-        //canvas.GetComponent<RectTransform>().GetLocalCorners(localCs);
-        //Vector3 viewPos = canvas.transform.InverseTransformPoint(transform.position + Vector3.up * 0.5f);
-
         //生成加分文字
         Text newText = Instantiate(scorePlusText, transform.position + Vector3.up * 0.1f, Quaternion.identity, canvas.transform);
         newText.text = plusScore.ToString();
